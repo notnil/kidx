@@ -25,7 +25,7 @@
             margin: 20px;
         }
         .option-button {
-            font-size: 20vw;
+            font-size: 10vw;
             padding: 20px 40px;
             margin: 20px;
             cursor: pointer;
@@ -40,7 +40,7 @@
             background-color: #F44336; /* red */
         }
         .counter {
-            font-size: 32px;
+            font-size: 24px;
             margin-top: 30px;
         }
         #playSoundButton {
@@ -66,24 +66,43 @@
     <audio id="correctSound" src="in.wav"></audio>
     <audio id="wrongSound" src="out.wav"></audio>
 
+    <!-- Hidden Audio Element for Letter Sounds -->
+    <audio id="letterSound"></audio>
+
     <script>
-        const letters = 'abcdefghijklmnopqrstuvwxyz';
+        const soundFiles = [
+            'a-apple.mp3', 'b-bat.mp3', 'c-cut.mp3', 'd-dip.mp3', 'e-elephant.mp3', 'f-fun.mp3',
+            'g-get.mp3', 'h-hat.mp3', 'i-igloo.mp3', 'j-jog.mp3', 'k-kit.mp3', 'l-lip.mp3',
+            'm-mug.mp3', 'n-nap.mp3', 'o-octopus.mp3', 'p-pick.mp3', 'qu-quest.mp3', 'r-rid.mp3',
+            's-his.mp3', 's-sit-mess.mp3', 't-tuck.mp3', 'u-up.mp3', 'v-van.mp3', 'w-will.mp3',
+            'x-mix-rocks.mp3', 'y-yes.mp3', 'z-zip-buzz.mp3'
+        ];
+
+        const soundsDir = 'sounds/';
+
+        // Map of sound files to their associated letters
+        const soundMap = soundFiles.map(filename => {
+            // Extract the letter(s) from the filename
+            let letterPart = filename.split('-')[0];
+            return {
+                filename: filename,
+                letters: letterPart
+            };
+        });
+
         let correctLetter = '';
+        let correctLetters = ''; // May contain more than one character (e.g., 'qu')
         let score = 0;
         let buttonsClickable = true;
 
-        function getRandomLetter() {
-            return letters[Math.floor(Math.random() * letters.length)];
-        }
-
         function randomCase(letter) {
-            return Math.random() < 0.5 ? letter.toUpperCase() : letter.toLowerCase();
+            return letter.toLowerCase();
+            // return Math.random() < 0.5 ? letter.toUpperCase() : letter.toLowerCase();
         }
 
         function playLetterSound() {
-            const utterThis = new SpeechSynthesisUtterance(correctLetter);
-            utterThis.lang = 'en-US';
-            window.speechSynthesis.speak(utterThis);
+            const audio = document.getElementById('letterSound');
+            audio.play();
         }
 
         function generateOptions() {
@@ -92,18 +111,32 @@
             document.getElementById('option1').classList.remove('correct', 'incorrect');
             document.getElementById('option2').classList.remove('correct', 'incorrect');
 
-            correctLetter = getRandomLetter();
-            let wrongLetter;
-            do {
-                wrongLetter = getRandomLetter();
-            } while (wrongLetter === correctLetter);
+            // Randomly select a sound file
+            let correctSoundObj = soundMap[Math.floor(Math.random() * soundMap.length)];
+            correctLetters = correctSoundObj.letters;
+            let correctFilename = correctSoundObj.filename;
 
-            const options = [correctLetter, wrongLetter].sort(() => Math.random() - 0.5);
-            document.getElementById('option1').textContent = randomCase(options[0]);
-            document.getElementById('option2').textContent = randomCase(options[1]);
+            // Prepare the correct letter (take the first letter if multiple letters, e.g., 'qu')
+            correctLetter = correctLetters;
+
+            // Load the correct letter sound
+            const letterAudio = document.getElementById('letterSound');
+            letterAudio.src = soundsDir + correctFilename;
 
             // Play the letter sound at the start of each round
             playLetterSound();
+
+            // Get a wrong letter, ensuring it's not the same as the correct letter
+            let wrongLetterObj;
+            do {
+                wrongLetterObj = soundMap[Math.floor(Math.random() * soundMap.length)];
+            } while (wrongLetterObj.letters === correctLetters || (correctLetters === 's' && wrongLetterObj.letters.startsWith('s')));
+
+            // Prepare options, avoiding both 's' sounds appearing together
+            const options = [correctLetter, wrongLetterObj.letters].sort(() => Math.random() - 0.5);
+
+            document.getElementById('option1').textContent = randomCase(options[0]);
+            document.getElementById('option2').textContent = randomCase(options[1]);
         }
 
         function checkAnswer(button) {
@@ -111,7 +144,7 @@
             buttonsClickable = false;
 
             const selectedLetter = button.textContent.toLowerCase();
-            if (selectedLetter === correctLetter) {
+            if (selectedLetter === correctLetter.toLowerCase()) {
                 document.getElementById('correctSound').play();
                 button.classList.add('correct');
                 score++;
