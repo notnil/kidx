@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Letter Sound Game</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background-color: #f0f8ff;
+        }
+        h1 {
+            margin: 20px 0;
+        }
+        .options {
+            display: flex;
+            justify-content: center;
+            margin: 20px;
+        }
+        .option-button {
+            font-size: 20vw;
+            padding: 20px 40px;
+            margin: 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            transition: background-color 0.5s;
+        }
+        .option-button.correct {
+            background-color: #8BC34A; /* green */
+        }
+        .option-button.incorrect {
+            background-color: #F44336; /* red */
+        }
+        .counter {
+            font-size: 32px;
+            margin-top: 30px;
+        }
+        #playSoundButton {
+            font-size: 2em;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Guess the Letter!</h1>
+    <button id="playSoundButton" onclick="playLetterSound()">🔊 Play Sound</button>
+
+    <div class="options">
+        <button id="option1" class="option-button" onclick="checkAnswer(this)"></button>
+        <button id="option2" class="option-button" onclick="checkAnswer(this)"></button>
+    </div>
+
+    <div class="counter">Correct Answers: <span id="score">0</span></div>
+
+    <!-- Correct and Incorrect Sound Effects -->
+    <audio id="correctSound" src="in.wav"></audio>
+    <audio id="wrongSound" src="out.wav"></audio>
+
+    <script>
+        const letters = 'abcdefghijklmnopqrstuvwxyz';
+        let correctLetter = '';
+        let score = 0;
+        let buttonsClickable = true;
+
+        function getRandomLetter() {
+            return letters[Math.floor(Math.random() * letters.length)];
+        }
+
+        function randomCase(letter) {
+            return Math.random() < 0.5 ? letter.toUpperCase() : letter.toLowerCase();
+        }
+
+        function playLetterSound() {
+            const utterThis = new SpeechSynthesisUtterance(correctLetter);
+            utterThis.lang = 'en-US';
+            window.speechSynthesis.speak(utterThis);
+        }
+
+        function generateOptions() {
+            buttonsClickable = true;
+            // Remove any previous classes
+            document.getElementById('option1').classList.remove('correct', 'incorrect');
+            document.getElementById('option2').classList.remove('correct', 'incorrect');
+
+            correctLetter = getRandomLetter();
+            let wrongLetter;
+            do {
+                wrongLetter = getRandomLetter();
+            } while (wrongLetter === correctLetter);
+
+            const options = [correctLetter, wrongLetter].sort(() => Math.random() - 0.5);
+            document.getElementById('option1').textContent = randomCase(options[0]);
+            document.getElementById('option2').textContent = randomCase(options[1]);
+
+            // Play the letter sound at the start of each round
+            playLetterSound();
+        }
+
+        function checkAnswer(button) {
+            if (!buttonsClickable) return;
+            buttonsClickable = false;
+
+            const selectedLetter = button.textContent.toLowerCase();
+            if (selectedLetter === correctLetter) {
+                document.getElementById('correctSound').play();
+                button.classList.add('correct');
+                score++;
+                document.getElementById('score').textContent = score;
+            } else {
+                document.getElementById('wrongSound').play();
+                button.classList.add('incorrect');
+            }
+            setTimeout(generateOptions, 1500);
+        }
+
+        // Initialize the game
+        window.onload = function() {
+            generateOptions();
+        }
+    </script>
+
+</body>
+</html>
